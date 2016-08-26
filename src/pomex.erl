@@ -151,7 +151,7 @@ json_set_headers() ->
     ].
 
 ask_for_pomid_url() ->
-    "http://10.152.1.20:4000/users/2/pomodoros".
+    "http://10.152.1.12:4000/users/2/pomodoros".
 
 push_stop_url(PomId) ->
     ask_for_pomid_url() ++ "/" ++ pomid_to_list(PomId).
