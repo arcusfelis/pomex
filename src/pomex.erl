@@ -45,7 +45,7 @@ stop_task(TriggerId) ->
                        [TriggerId, PomId, StartTime, DurationSeconds]),
             timer:cancel(ExpireTRef),
             ets:delete(pomex_task, TriggerId),
-            push_stop(TriggerId, DurationSeconds),
+            push_stop(TriggerId, PomId, DurationSeconds),
             pomex_sound:play_finish(),
             ok;
         _ ->
@@ -126,8 +126,22 @@ ask_for_pomid(TriggerId) ->
             erlang:error(ask_for_pomid_failed)
     end.
 
-push_stop(TriggerId, DurationSeconds) ->
-    ok.
+push_stop(TriggerId, PomId, DurationSeconds) ->
+    FullUrl = push_stop_url(PomId),
+    Headers = json_set_headers(),
+    Payload = jsx:encode([{duration, DurationSeconds}]),
+    lager:info("issue=push_stop, trigger_id=~p, pomid=~p, url=~1000p, payload=~1000p",
+               [TriggerId, PomId, FullUrl, Payload]),
+    Res = lhttpc:request(FullUrl, 'PATCH', Headers, Payload, 5000),
+    case Res of
+        {ok, {{200,"OK"}, _Hdrs, Resp}}  ->
+            lager:info("issue=server_returns, response=~p", [Resp]),
+            ok;
+        Other ->
+            lager:error("issue=server_returns, response=~p", [Other]),
+            pomex_sound:play_error(),
+            erlang:error(push_stop_failed)
+    end.
 
 json_set_headers() ->
     [
@@ -138,6 +152,12 @@ json_set_headers() ->
 
 ask_for_pomid_url() ->
     "http://10.152.1.20:4000/users/2/pomodoros".
+
+push_stop_url(PomId) ->
+    ask_for_pomid_url() ++ "/" ++ pomid_to_list(PomId).
+
+pomid_to_list(PomId) when is_integer(PomId) -> integer_to_list(PomId);
+pomid_to_list(PomId) when is_binary(PomId) -> binary_to_list(PomId).
 
 response_to_pomid(Resp) ->
     RespJSON = jsx:decode(Resp),
