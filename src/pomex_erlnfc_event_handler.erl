@@ -130,6 +130,7 @@ handle_nfc_tag(Nfctag, LastSeen) ->
             Milliseconds = timer:now_diff(Now, Timestamp) div 1000,
             case is_duplicate(Milliseconds) of
                 true ->
+                    lager:info("issue=ignore_duplicate, event=~p, milliseconds=~p", [Nfctag, Milliseconds]),
                     ok;
                 false ->
                     pass_nfc_tag(Nfctag)
