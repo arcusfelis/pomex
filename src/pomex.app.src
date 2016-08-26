@@ -1,0 +1,12 @@
+%% $Id$
+
+{application, pomex,
+ [{description, "pomex"},
+  {vsn, "1.0.0"},
+  {applications, [kernel, stdlib]}]}.
+
+
+%% Local Variables:
+%% mode: erlang
+%% End:
+%% vim: set filetype=erlang tabstop=8:
