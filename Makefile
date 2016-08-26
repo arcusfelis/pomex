@@ -9,6 +9,9 @@ clean: ./rebar
 deps: ./rebar
 	./rebar get-deps
 
+console: compile
+	erl -pa ebin deps/*/ebin
+
 ./rebar:
 	rm -rf rebar-dist rebar-dist.tar.gz
 	wget https://github.com/rebar/rebar/archive/2.6.1.tar.gz -O rebar-dist.tar.gz || \
