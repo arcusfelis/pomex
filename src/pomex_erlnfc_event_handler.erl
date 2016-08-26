@@ -49,7 +49,7 @@ init([]) ->
 handle_event({nfctag,Nfctag}, State) ->
     lager:info("issue=nfctag_received, event=~p", [Nfctag]),
     TriggerId = nfctag_to_binary(Nfctag),
-    pomex:fire_trigger(TriggerId),
+    catch pomex:fire_trigger(TriggerId),
     {ok, State};
 handle_event(Event, State) ->
     pomex_sound:play_error(),
