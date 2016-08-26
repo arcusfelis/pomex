@@ -13,7 +13,7 @@
 -export([init/1, handle_event/2, handle_call/2, 
          handle_info/2, terminate/2, code_change/3]).
 
--record(state, {}).
+-record(state, {last_seen}).
 
 
 %%%===================================================================
@@ -30,7 +30,7 @@
 %% @end
 %%--------------------------------------------------------------------
 init([]) ->
-    {ok, #state{}}.
+    {ok, #state{last_seen=dict:new()}}.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -46,11 +46,9 @@ init([]) ->
 %% @end
 %%--------------------------------------------------------------------
 
-handle_event({nfctag,Nfctag}, State) ->
-    lager:info("issue=nfctag_received, event=~p", [Nfctag]),
-    TriggerId = nfctag_to_binary(Nfctag),
-    catch pomex:fire_trigger(TriggerId),
-    {ok, State};
+handle_event({nfctag,Nfctag}, State=#state{last_seen=LastSeen}) ->
+    LastSeen2 = handle_nfc_tag(Nfctag, LastSeen),
+    {ok, State#state{last_seen=LastSeen2}};
 handle_event(Event, State) ->
     pomex_sound:play_error(),
     lager:error("issue=unknown_event, event=~1000p", [Event]),
@@ -122,3 +120,29 @@ nfctag_to_binary(Nfctag) when is_integer(Nfctag) ->
     list_to_binary(integer_to_list(Nfctag));
 nfctag_to_binary(Nfctag) when is_binary(Nfctag) ->
     Nfctag.
+
+handle_nfc_tag(Nfctag, LastSeen) ->
+    lager:info("issue=nfctag_received, event=~p", [Nfctag]),
+    Now = os:timestamp(),
+    %% Detect duplicates
+    case dict:find(Nfctag, LastSeen) of
+        {ok, Timestamp} ->
+            Milliseconds = timer:diff(Now, Timestamp) div 1000,
+            case is_duplicate(Milliseconds) of
+                true ->
+                    ok;
+                false ->
+                    pass_nfc_tag(Nfctag)
+            end;
+        _ ->
+            %% First time seen
+            pass_nfc_tag(Nfctag)
+    end,
+    dict:store(Nfctag, Now, LastSeen).
+
+pass_nfc_tag(Nfctag) ->
+    TriggerId = nfctag_to_binary(Nfctag),
+    catch pomex:fire_trigger(TriggerId).
+
+%% Less than three seconds
+is_duplicate(Milliseconds) -> Milliseconds < 3000.
