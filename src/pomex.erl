@@ -101,15 +101,28 @@ ask_for_pomid(TriggerId) ->
     FullUrl = ask_for_pomid_url(),
     Headers = json_set_headers(),
     Payload = jsx:encode([{device_id, DeviceId}, {trigger_id, TriggerId}]),
-    lager:info("issue=ask_for_pomid, trigger_id=~p, device_id=~p, url=~p",
-               [TriggerId, DeviceId, FullUrl]),
+    lager:info("issue=ask_for_pomid, trigger_id=~p, device_id=~p, url=~1000p, payload=~1000p",
+               [TriggerId, DeviceId, FullUrl, Payload]),
     Res = lhttpc:request(FullUrl, 'POST', Headers, Payload, 5000),
     case Res of
         {ok, {{200,"OK"}, _Hdrs, Resp}}  ->
             lager:info("issue=server_returns, response=~p", [Resp]),
-            response_to_pomid(Resp);
+            try
+                response_to_pomid(Resp)
+            of PomId ->
+                lager:info("issue=server_returns_pomid, pomid=~p", [Resp]),
+                PomId
+            catch Class:Reason ->
+                S = erlang:get_stacktrace(),
+                lager:error("issue=server_returns_error, "
+                            "error=~p:~1000p, stacktrace=~1000p",
+                            [Class, Reason, S]),
+                pomex_sound:play_error(),
+                erlang:error(server_returns_error)
+            end;
         Other ->
             lager:error("issue=server_returns, response=~p", [Other]),
+            pomex_sound:play_error(),
             erlang:error(ask_for_pomid_failed)
     end.
 
