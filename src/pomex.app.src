@@ -3,7 +3,8 @@
 {application, pomex,
  [{description, "pomex"},
   {vsn, "1.0.0"},
-  {applications, [kernel, stdlib]}]}.
+  {mod, { pomex_app, []}},
+  {applications, [kernel, stdlib, lager]}]}.
 
 
 %% Local Variables:

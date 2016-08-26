@@ -10,7 +10,7 @@ deps: ./rebar
 	./rebar get-deps
 
 console: compile
-	erl -pa ebin deps/*/ebin
+	erl -pa ebin deps/*/ebin -eval "application:ensure_all_started(pomex)." -s reloader
 
 ./rebar:
 	rm -rf rebar-dist rebar-dist.tar.gz
