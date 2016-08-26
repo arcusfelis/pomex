@@ -176,6 +176,7 @@ response_to_pomid(Resp) ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([]) ->
+    erlnfc:add_handler(pomex_erlnfc_event_handler),
     ets:new(pomex_task, [set, named_table, public, {keypos, 2}]),
     {ok, #state{}}.
 
