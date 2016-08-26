@@ -127,7 +127,7 @@ handle_nfc_tag(Nfctag, LastSeen) ->
     %% Detect duplicates
     case dict:find(Nfctag, LastSeen) of
         {ok, Timestamp} ->
-            Milliseconds = timer:diff(Now, Timestamp) div 1000,
+            Milliseconds = timer:now_diff(Now, Timestamp) div 1000,
             case is_duplicate(Milliseconds) of
                 true ->
                     ok;
