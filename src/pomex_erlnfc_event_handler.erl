@@ -45,8 +45,15 @@ init([]) ->
 %%                          remove_handler
 %% @end
 %%--------------------------------------------------------------------
+
+handle_event({nfctag,Nfctag}, State) ->
+    lager:info("issue=nfctag_received, event=~p", [Nfctag]),
+    TriggerId = nfctag_to_binary(Nfctag),
+    pomex:fire_trigger(TriggerId),
+    {ok, State};
 handle_event(Event, State) ->
-    io:format("Event: ~p~n", [Event]),
+    pomex_sound:play_error(),
+    lager:error("issue=unknown_event, event=~1000p", [Event]),
     {ok, State}.
 
 %%--------------------------------------------------------------------
@@ -105,3 +112,13 @@ terminate(_Reason, _State) ->
 %%--------------------------------------------------------------------
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
+
+
+%%%===================================================================
+%%% Internals
+%%%===================================================================
+
+nfctag_to_binary(Nfctag) when is_integer(Nfctag) ->
+    list_to_binary(integer_to_list(Nfctag));
+nfctag_to_binary(Nfctag) when is_binary(Nfctag) ->
+    Nfctag.
