@@ -97,10 +97,39 @@ duration() -> %% in seconds
 %%====================================================================
 
 ask_for_pomid(TriggerId) ->
-    <<"pomidoooooor">>.
+    DeviceId = pomex_utils:get_device_id(),
+    FullUrl = ask_for_pomid_url(),
+    Headers = json_set_headers(),
+    Payload = jsx:encode([{device_id, DeviceId}, {trigger_id, TriggerId}]),
+    lager:info("issue=ask_for_pomid, trigger_id=~p, device_id=~p, url=~p",
+               [TriggerId, DeviceId, FullUrl]),
+    Res = lhttpc:request(FullUrl, 'POST', Headers, Payload, 5000),
+    case Res of
+        {ok, {{200,"OK"}, _Hdrs, Resp}}  ->
+            lager:info("issue=server_returns, response=~p", [Resp]),
+            response_to_pomid(Resp);
+        Other ->
+            lager:error("issue=server_returns, response=~p", [Other]),
+            erlang:error(ask_for_pomid_failed)
+    end.
 
 push_stop(TriggerId, DurationSeconds) ->
     ok.
+
+json_set_headers() ->
+    [
+        {"User-Agent", "Pomex on PI"},
+        {"Accept", "application/json"},
+        {"Content-type", "application/json"}
+    ].
+
+ask_for_pomid_url() ->
+    "http://10.152.1.12:4000/users/2/pomodoros".
+
+response_to_pomid(Resp) ->
+    RespJSON = jsx:decode(Resp),
+    {<<"pid">>, PomId} = lists:keyfind(<<"pid">>, 1, RespJSON),
+    PomId.
 
 %%====================================================================
 %% gen_server callbacks
