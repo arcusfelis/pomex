@@ -142,7 +142,7 @@ handle_nfc_tag(Nfctag, LastSeen) ->
 
 pass_nfc_tag(Nfctag) ->
     TriggerId = nfctag_to_binary(Nfctag),
-    catch pomex:fire_trigger(TriggerId).
+    spawn(fun() -> catch pomex:fire_trigger(TriggerId) end).
 
 %% Less than three seconds
 is_duplicate(Milliseconds) -> Milliseconds < 3000.
